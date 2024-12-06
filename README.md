@@ -6,6 +6,6 @@ Web scrapper para extração de posts relacionados a eleição de 2024 nos EUA. 
 
 Para executar o scrapper basta criar um virtual enviroment e instalar as dependências.
 
-python3 -m venv venv
+python3 -m venv env
 
 pip install -r requirements.txt
