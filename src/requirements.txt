@@ -1,3 +1,4 @@
-textblob
-
+nltk
+numpy
+matplotlib
 praw

@@ -1,6 +1,7 @@
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import json
+import matplotlib.pyplot as plt
 
 class SentimentAnalyzer:
     def __init__(self, candidate_1_file="cleaned_candidate_1_titles.json", candidate_2_file="cleaned_candidate_2_titles.json"):
@@ -49,7 +50,41 @@ class SentimentAnalyzer:
             json.dump(self.results, outfile, indent=4)
         print(f"Sentiment analysis results saved to {output_file}")
 
+    def plot_sentiment_distribution(self):
+        def count_sentiments(candidate_key):
+            sentiments = [item["sentiment"] for item in self.results[candidate_key]]
+            return {
+                "positive": sentiments.count("positive"),
+                "neutral": sentiments.count("neutral"),
+                "negative": sentiments.count("negative")
+            }
+
+        candidate_1_counts = count_sentiments("candidate_1")
+        candidate_2_counts = count_sentiments("candidate_2")
+
+        # Plot for candidate 1
+        plt.figure(figsize=(12, 5))
+        plt.subplot(1, 2, 1)
+        plt.bar(candidate_1_counts.keys(), candidate_1_counts.values(), color=['green', 'blue', 'red'])
+        plt.title("Sentiment Distribution for Candidate 1")
+        plt.xlabel("Sentiment")
+        plt.ylabel("Count")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        # Plot for candidate 2
+        plt.subplot(1, 2, 2)
+        plt.bar(candidate_2_counts.keys(), candidate_2_counts.values(), color=['green', 'blue', 'red'])
+        plt.title("Sentiment Distribution for Candidate 2")
+        plt.xlabel("Sentiment")
+        plt.ylabel("Count")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        # Show plots
+        plt.tight_layout()
+        plt.show()
+
 if __name__ == "__main__":
     analyzer = SentimentAnalyzer()
     analyzer.analyze_sentiment()
     analyzer.save_results()
+    analyzer.plot_sentiment_distribution()

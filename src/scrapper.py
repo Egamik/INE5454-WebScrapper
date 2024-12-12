@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 class RedditCrawler():
     def __init__(self,
-                subreddits=['uspolitics', 'americanpolitics', 'politics', 'PoliticalDiscussion', 'republican', 'democrats'],
+                subreddits=['uspolitics', 'PoliticalDiscussion', 'republican', 'democrats'],
                 keywords=[['donald', 'trump', 'donald trump'], ['kamala', 'harris', 'kamala harris']]
                 ):
         self.reddit_read_only = praw.Reddit(
@@ -35,7 +35,7 @@ class RedditCrawler():
             for keyword in self.keywords:
                 print(f"Searching for keyword: {keyword}")
                 try:
-                    for submission in subreddit.search(query=keyword, sort="new", limit=300):
+                    for submission in subreddit.search(query=keyword, sort="new", limit=100):
                         # Filter submissions by date
                         if not (self.start_date <= submission.created_utc <= self.end_date):
                             continue
@@ -43,7 +43,7 @@ class RedditCrawler():
                         # Fetch submission details
                         submission.comments.replace_more(limit=0)  # Flatten comments
                         all_comments = submission.comments.list()
-                        comments = [comment.body for comment in all_comments[:50]]  # Limit to the first 50 comments
+                        comments = [comment.body for comment in all_comments[:5]]  # Limit to the first 5 comments
 
                         submission_info = {
                             'ID': f"{self.search_id}_{submission.id}",
@@ -73,10 +73,10 @@ class RedditCrawler():
         with open(filename, "w") as outfile:
             json.dump(self.submissions_info, outfile, indent=4)
         
-        with open(filename+"_1", "w") as outfile:
+        with open("results_1.json", "w") as outfile:
             json.dump(self.candidate_1_posts, outfile, indent=4)
         
-        with open(filename+"_2", "w", outfile):
+        with open("results_2.json", "w") as outfile:
             json.dump(self.candidate_2_posts, outfile, indent=4)
              
         print(f"Results saved to {filename}")
@@ -84,12 +84,15 @@ class RedditCrawler():
     def clean_data(self, filename="results", filext='.json'):
         def clean_text(text):
             text = re.sub(r'[^A-Za-z0-9\s]', '', text)  # Remove special characters
+            text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+            text = re.sub(r'[\U00010000-\U0010FFFF]', '', text, flags=re.UNICODE)  # Remove emojis
+            text = re.sub(r'[\u2018\u2019\u201c\u201d\u2026\u2014\u201d\u201c\'\"]', '', text) # Remove quotes
             return text.lower().strip()  # Convert to lowercase and strip whitespace
         
         with open("results_1.json", "r") as infile:
             c1_data = json.load(infile)
             
-        with open('results_2.json', 'r') as infile:
+        with open("results_2.json", "r") as infile:
             c2_data = json.load(infile)
             
         clean_1 = [clean_text(text) for text in c1_data]
