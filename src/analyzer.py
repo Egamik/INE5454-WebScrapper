@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 
 class SentimentAnalyzer:
-    def __init__(self, candidate_1_file="cleaned_candidate_1_titles.json", candidate_2_file="cleaned_candidate_2_titles.json"):
+    def __init__(self, candidate_1_file="clean_1.json", candidate_2_file="clean_2.json"):
         nltk.download('vader_lexicon')  # Ensure VADER lexicon is downloaded
         self.analyzer = SentimentIntensityAnalyzer()
         self.candidate_1_file = candidate_1_file
