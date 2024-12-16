@@ -10,8 +10,8 @@ class SentimentAnalyzer:
         self.candidate_1_file = candidate_1_file
         self.candidate_2_file = candidate_2_file
         self.results = {
-            "candidate_1": [],
-            "candidate_2": []
+            "candidate_1": [],  # Trump
+            "candidate_2": []   # Kamala
         }
 
     def analyze_sentiment(self):

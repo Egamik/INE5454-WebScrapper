@@ -70,16 +70,39 @@ class RedditCrawler():
                     print(f"Error while searching in subreddit {sub}: {e}")
 
     def save_results(self, filename="results.json"):
-        with open(filename, "w") as outfile:
-            json.dump(self.submissions_info, outfile, indent=4)
+        def organize_by_year(data):
+            years = {"2020": [], "2021": [], "2022": [], "2023": [], "2024": []}
+            for item in data:
+                # Extract year from the submission's date
+                submission_year = datetime.strptime(item['Date'], '%Y-%m-%d %H:%M:%S').year
+                year_str = str(submission_year)
+                if year_str in years:
+                    years[year_str].append(item)
+            return years
+
+        # Organize all submissions by year
+        submissions_by_year = organize_by_year(self.submissions_info)
         
+        # Save full results with year organization
+        with open(filename, "w") as outfile:
+            json.dump(submissions_by_year, outfile, indent=4)
+        
+        # Separate candidate posts and organize them by year
+        candidate_1_by_year = organize_by_year(
+            [{"Title": title} for title in self.candidate_1_posts]
+        )
+        candidate_2_by_year = organize_by_year(
+            [{"Title": title} for title in self.candidate_2_posts]
+        )
+
+        # Save candidate-specific results
         with open("results_1.json", "w") as outfile:
-            json.dump(self.candidate_1_posts, outfile, indent=4)
+            json.dump(candidate_1_by_year, outfile, indent=4)
         
         with open("results_2.json", "w") as outfile:
-            json.dump(self.candidate_2_posts, outfile, indent=4)
-             
-        print(f"Results saved to {filename}")
+            json.dump(candidate_2_by_year, outfile, indent=4)
+            
+        print(f"Results saved to {filename}, results_1.json, and results_2.json")
 
     def clean_data(self, filename="results", filext='.json'):
         def clean_text(text):
