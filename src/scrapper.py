@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 class RedditCrawler():
     def __init__(self,
                 subreddits=['uspolitics', 'PoliticalDiscussion', 'republican', 'democrats'],
-                keywords=[['donald', 'trump', 'donald trump'], ['kamala', 'harris', 'kamala harris']]
+                keywords=[['trump'], ['kamala']]
                 ):
         self.reddit_read_only = praw.Reddit(
             client_id="n5gAGsyr-4s7yArEWI9Etw",
@@ -16,7 +16,6 @@ class RedditCrawler():
         self.candidate_1_posts = []
         self.candidate_2_posts = []
         
-        self.search_id = 0
         self.submissions_info = []
         
         self.subreddits = subreddits
@@ -24,9 +23,6 @@ class RedditCrawler():
         self.candidate_1_keywords = keywords[0]
         self.candidate_2_keywords = keywords[1]
         
-        self.start_date = datetime(2021, 1, 1).replace(tzinfo=timezone.utc).timestamp()
-        self.end_date = datetime(2024, 12, 31).replace(tzinfo=timezone.utc).timestamp()
-
     def crawl(self):
         for sub in self.subreddits:
             subreddit = self.reddit_read_only.subreddit(sub)
@@ -35,29 +31,31 @@ class RedditCrawler():
             for keyword in self.keywords:
                 print(f"Searching for keyword: {keyword}")
                 try:
-                    for submission in subreddit.search(query=keyword, sort="new", limit=100):
-                        # Filter submissions by date
-                        if not (self.start_date <= submission.created_utc <= self.end_date):
+                    for submission in subreddit.search(query=keyword, sort="new", time_filter="year"):
+                        # Ensure keyword is in the title or selftext
+                        if keyword.lower() not in submission.title.lower() and keyword.lower() not in submission.selftext.lower():
                             continue
 
                         # Fetch submission details
                         submission.comments.replace_more(limit=0)  # Flatten comments
                         all_comments = submission.comments.list()
-                        comments = [comment.body for comment in all_comments[:5]]  # Limit to the first 5 comments
+                        comments = [comment.body for comment in all_comments[:10]]  # Limit to the first 10 comments
 
                         submission_info = {
-                            'ID': f"{self.search_id}_{submission.id}",
+                            'ID': f"{submission.id}",
                             'Subreddit': sub,
                             'Keyword': keyword,
                             'Title': submission.title,
                             'Text': submission.selftext,  # Post content
                             'Upvotes': submission.score,
                             'Comments_Count': submission.num_comments,
-                            'Comments': comments,  # Add all comments
+                            'Comments': comments, 
                             'Date': datetime.utcfromtimestamp(submission.created_utc).strftime('%Y-%m-%d %H:%M:%S'),
                             'URL': submission.url
                         }
+                        
                         self.submissions_info.append(submission_info)
+                        
                         print(f"Added submission: {submission.title}")
                         
                         if keyword in self.candidate_1_keywords:
@@ -65,44 +63,20 @@ class RedditCrawler():
                         else:
                             self.candidate_2_posts.append(submission.title)
                     
-                    self.search_id += 1
                 except Exception as e:
                     print(f"Error while searching in subreddit {sub}: {e}")
 
     def save_results(self, filename="results.json"):
-        def organize_by_year(data):
-            years = {"2020": [], "2021": [], "2022": [], "2023": [], "2024": []}
-            for item in data:
-                # Extract year from the submission's date
-                submission_year = datetime.strptime(item['Date'], '%Y-%m-%d %H:%M:%S').year
-                year_str = str(submission_year)
-                if year_str in years:
-                    years[year_str].append(item)
-            return years
-
-        # Organize all submissions by year
-        submissions_by_year = organize_by_year(self.submissions_info)
-        
-        # Save full results with year organization
         with open(filename, "w") as outfile:
-            json.dump(submissions_by_year, outfile, indent=4)
+            json.dump(self.submissions_info, outfile, indent=4)
         
-        # Separate candidate posts and organize them by year
-        candidate_1_by_year = organize_by_year(
-            [{"Title": title} for title in self.candidate_1_posts]
-        )
-        candidate_2_by_year = organize_by_year(
-            [{"Title": title} for title in self.candidate_2_posts]
-        )
-
-        # Save candidate-specific results
         with open("results_1.json", "w") as outfile:
-            json.dump(candidate_1_by_year, outfile, indent=4)
+            json.dump(self.candidate_1_posts, outfile, indent=4)
         
         with open("results_2.json", "w") as outfile:
-            json.dump(candidate_2_by_year, outfile, indent=4)
-            
-        print(f"Results saved to {filename}, results_1.json, and results_2.json")
+            json.dump(self.candidate_2_posts, outfile, indent=4)
+             
+        print(f"Results saved to {filename}")
 
     def clean_data(self, filename="results", filext='.json'):
         def clean_text(text):
@@ -129,9 +103,39 @@ class RedditCrawler():
             
         print('Clean data saved')
         
+    def categorize_data(self, filename="results.json"):
+        
+        candidates_dict = {
+            "c1": [],
+            "c2": []
+        }
+        submissions = []
+        try:
+            with open(filename, "r") as infile:
+                submissions = json.load(infile)
+        except:
+            print('Missing data file to categorize.')
+            return
+        
+        for sub in submissions:
+            sub_key = sub['Keyword']
+            
+            if sub_key in self.candidate_1_keywords:
+                candidates_dict["c1"].append(sub)
+            elif sub_key in self.candidate_2_keywords:
+                candidates_dict["c2"].append(sub)
+                
+        with open("c1_results.json", "w") as outfile:
+            json.dump(candidates_dict['c1'], outfile, indent=4)
+            
+        with open("c2_results.json", "w") as outfile:
+            json.dump(candidates_dict['c2'], outfile, indent=4)
+            
+        print('Data categorized in sepparate files')
 
 if __name__ == "__main__":
     crawler = RedditCrawler()
     crawler.crawl()
     crawler.save_results()
     crawler.clean_data()
+    # crawler.categorize_data()

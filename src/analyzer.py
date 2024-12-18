@@ -66,7 +66,7 @@ class SentimentAnalyzer:
         plt.figure(figsize=(12, 5))
         plt.subplot(1, 2, 1)
         plt.bar(candidate_1_counts.keys(), candidate_1_counts.values(), color=['green', 'blue', 'red'])
-        plt.title("Sentiment Distribution for Candidate 1")
+        plt.title("Sentiment Distribution for Donald Trump")
         plt.xlabel("Sentiment")
         plt.ylabel("Count")
         plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -74,7 +74,7 @@ class SentimentAnalyzer:
         # Plot for candidate 2
         plt.subplot(1, 2, 2)
         plt.bar(candidate_2_counts.keys(), candidate_2_counts.values(), color=['green', 'blue', 'red'])
-        plt.title("Sentiment Distribution for Candidate 2")
+        plt.title("Sentiment Distribution for Kamala Harris")
         plt.xlabel("Sentiment")
         plt.ylabel("Count")
         plt.grid(axis='y', linestyle='--', alpha=0.7)
